@@ -79,8 +79,8 @@ add_action('admin_menu', 'add_events_users_requested_submenu');
 function add_events_users_requested_submenu() {
   add_submenu_page( 
       'edit.php?post_type=simple_events'
-    , 'Users Applied To Events' 
-    , 'Users Applied To Events'
+    , 'Registered Users' 
+    , 'Registered Users'
     , 'manage_options'
     , 'simple_jobs_users_requested'
     , 'simple_events_requested_callback'
@@ -118,6 +118,7 @@ function simple_events_requested_callback() {
 					<th width='40'>S.No</th>					
 					<th>Name</th>
 					<th>Email</th>
+					<th>Company</th>
 					<th>Description</th>
 				</tr><thead>";
 			echo "<tbody>";
@@ -128,6 +129,7 @@ function simple_events_requested_callback() {
 					echo "<td>".($key+1)."</td>";
 					echo "<td>".$userData['userName']."</td>";
 					echo "<td>".$userData['userEmail']."</td>";
+					echo "<td>".$userData['userCompany']."</td>";
 					echo "<td>".$userData['userDescription']."</td>";					
 					echo "</tr>";					
 				}
@@ -164,20 +166,45 @@ function adding_simple_events_boxes() {
 **/
 function render_simple_events_meta_box() {
 	if( !empty($_GET['post']) ) {
-		$email_description 	= get_post_meta($_GET['post'], '_email_description', ARRAY_A);
+		$event_name 	= get_post_meta($_GET['post'], '_event_name', ARRAY_A);		
+		$event_venu 	= get_post_meta($_GET['post'], '_event_venu', ARRAY_A);		
+		$event_location = get_post_meta($_GET['post'], '_event_location', ARRAY_A);		
+		$event_information_text = get_post_meta($_GET['post'], '_event_information_text', ARRAY_A);
+		$event_dateandtime = get_post_meta($_GET['post'], '_event_dateandtime', ARRAY_A);		
+		$email_description = get_post_meta($_GET['post'], '_email_description', ARRAY_A);		
 		echo "<h3>Shortcode: [simple_events id='".$_GET['post']."']</h3>";
 	}
 	else {
-		$email_description = $job_salary = $client_name = $client_address = $client_email = $client_telephone_number = "";
+		$event_name = $event_venu = $event_location = $event_information_text = $event_dateandtime = $email_description = "";
 	}
 	echo '<div id="feedsGeneratorId1">			
 		<form action="" method="post">			
-			<ul>
-		        <li>
-		        	<label for="email_description">Text to send on Email: </label>
-		        	<textarea name="email_description" id="email_description">'.$email_description.'</textarea>
-		        </li>		        
-		    </ul>		    		    
+			<table style="width:100%">
+				<tr>
+		        	<td width="20%"><label for="event_name">Event Name: </label></td>
+		        	<td width="80%"><input type="text" name="event_name" id="event_name" value="'.$event_name.'"></td>
+		        </tr>
+		        <tr>
+		        	<td width="20%"><label for="event_venu">Venue: </label></td>
+		        	<td width="80%"><input type="text" name="event_venu" id="event_venu" value="'.$event_venu.'"></td>
+		        </tr>
+		        <tr>
+		        	<td width="20%"><label for="event_location">Location: </label></td>
+		        	<td width="80%"><input type="text" name="event_location" id="event_location" value="'.$event_location.'"></td>
+		        </tr>
+		        <tr>
+		        	<td width="20%"><label for="event_dateandtime">Date and Time: </label></td>
+		        	<td width="80%"><input type="text" name="event_dateandtime" id="event_dateandtime" value="'.$event_dateandtime.'"></td>
+		        </tr>
+		        <tr>
+		        	<td width="20%"><label for="event_information_text">Event Information text: </l width="80%"abel></td>
+		        	<td><textarea name="event_information_text" id="event_information_text">'.$event_information_text.'</textarea></td>
+		        </tr>
+		        <tr>
+		        	<td width="20%"><label for="email_description">Confirmation email text: </l width="80%"abel></td>
+		        	<td><textarea name="email_description" id="email_description">'.$email_description.'</textarea></td>
+		        </tr>
+		    </table>		    		    
 		</form>		
 	</div>';
 }
@@ -189,7 +216,25 @@ add_action('save_post', 'simple_events_save_postdata');
 function simple_events_save_postdata($post_id) {	
     if( !empty($_POST['email_description']) && $post_id) {
 	    update_post_meta($post_id, '_email_description', $_POST['email_description']);		
-    }    
+    }
+	if( !empty($_POST['event_name']) && $post_id ){
+		update_post_meta($post_id, '_event_name', $_POST['event_name']);		
+	}
+	if( !empty($_POST['event_venu']) && $post_id ){
+		update_post_meta($post_id, '_event_venu', $_POST['event_venu']);		
+	}
+	if( !empty($_POST['event_location']) && $post_id ){
+		update_post_meta($post_id, '_event_location', $_POST['event_location']);		
+	}
+	if( !empty($_POST['event_information_text']) && $post_id ){
+		update_post_meta($post_id, '_event_information_text', $_POST['event_information_text']);
+	}
+	if( !empty($_POST['event_dateandtime']) && $post_id ){
+		update_post_meta($post_id, '_event_dateandtime', $_POST['event_dateandtime']);		
+	}
+	if( !empty($_POST['email_description']) && $post_id ){
+		update_post_meta($post_id, '_email_description', $_POST['email_description']);		
+	}
 }
 
 
@@ -233,7 +278,7 @@ function submit_simple_event_callback() {
 			}
 		}
 		else {
-			$appliedUsers[] = $_POST;	
+			$appliedUsers = array($_POST);	
 		}		
 
 		$updateuserMetaFlag = update_post_meta( $_POST['postId'], 'applied_users_data', json_encode( $appliedUsers ) );
@@ -267,13 +312,41 @@ function simple_events_shortcode_callback( $atts ) {
 	$output = "<form method='post' class='simpleEventAjaxForm'>
 		<input type='hidden' name='action' value='submit_simple_event'>
 		<input type='hidden' name='postId' value='".$a['id']."'>
-		<input type='text' name='userName' placeholder='Your Name' required>
-		<input type='email' name='userEmail' placeholder='Your email address' required>
-		<input type='email' name='userEmail' placeholder='Company'>
-		<textarea name='userDescription'>Useful information, food allergy, special needs etc</textarea>
-		<input type='checkbox' required>Terms accepted
-		<button type='submit'>Submit</button>
+		<table>
+			<tr>
+				<td><input type='text' class='dmp-event-name' name='userName' placeholder='Your Name' required></td>
+			</tr>
+			<tr>
+				<td><input type='email' class='dmp-event-email' name='userEmail' placeholder='Your email address' required></td>
+			</tr>
+			<tr>
+				<td><input type='text' class='dmp-event-company' name='userCompany' placeholder='Company'></td>
+			</tr>
+			<tr>
+				<td><textarea name='userDescription' class='dmp-event-comments' placeholder='Useful information, food allergy, special needs etc'></textarea></td>
+			</tr>
+			<tr>
+				<td><input type='checkbox' class='dmp-event-confirm-terms' required>Terms accepted</td>
+			</tr>
+			<tr>
+				<td><button type='submit' class='dmp-event-submit'>Submit</button></td>
+			</tr>
+		</table>		
 	</form>";
 
 	return $output;
 }
+
+
+// add_filter( 'manage_edit-simple_events', 'my_edit_simple_events' ) ;
+// function my_edit_simple_events( $columns ) {
+// 	$columns = array(
+// 		'cb' => '&lt;input type="checkbox" />',
+// 		'title' => __( 'Movie' ),
+// 		'duration' => __( 'Duration' ),
+// 		'genre' => __( 'Genre' ),
+// 		'date' => __( 'Date' )
+// 	);
+
+// 	return $columns;
+// }
