@@ -112,7 +112,19 @@ function simple_events_requested_callback() {
 			$appliedJobs = get_post_meta(get_the_ID(), 'applied_users_data', ARRAY_A);
 			$permalink 	 = get_the_permalink(get_the_ID());
 			
-			echo "<h3>JOB TITLE: $title</h3>";
+			echo '<table>
+				<tr>
+					<td><h3>JOB TITLE: '.$title.'</h3></td>
+					<td align="right">
+						<form method="post" id="download_form"  action="'.plugins_url( 'download.csv.php' , __FILE__ ).'">
+				            <input type="hidden" name="download" value="'.get_home_path().'" />
+				            <input type="hidden" name="post_id" value="'.$postId.'" />
+				            <input type="submit" name="download_csv"  class="button-primary" value="Download CSV" />
+			        	</form>
+			        </td>
+				</tr>
+			</table>';			
+
 			echo '<table class="widefat fixed" cellspacing="0" >';
 			echo "<thead><tr>
 					<th width='40'>S.No</th>					
@@ -127,10 +139,10 @@ function simple_events_requested_callback() {
 				foreach ($appliedJobs as $key => $userData) {
 					echo "<tr>";
 					echo "<td>".($key+1)."</td>";
-					echo "<td>".$userData['userName']."</td>";
-					echo "<td>".$userData['userEmail']."</td>";
-					echo "<td>".$userData['userCompany']."</td>";
-					echo "<td>".$userData['userDescription']."</td>";					
+					echo "<td>".@$userData['userName']."</td>";
+					echo "<td>".@$userData['userEmail']."</td>";
+					echo "<td>".@$userData['userCompany']."</td>";
+					echo "<td>".@$userData['userDescription']."</td>";					
 					echo "</tr>";					
 				}
 			}
@@ -205,9 +217,10 @@ function render_simple_events_meta_box() {
 		        	<td><textarea name="email_description" id="email_description">'.$email_description.'</textarea></td>
 		        </tr>
 		    </table>		    		    
-		</form>		
+		</form>
 	</div>';
 }
+
 
 /**
 * Hooking the save post action
@@ -244,9 +257,17 @@ function simple_events_save_postdata($post_id) {
 function simple_events_enqueue_script() {
     wp_enqueue_script( 'simple_events_js', plugin_dir_url( __FILE__ ) . 'js/script.js', array('jquery'), '1.0' );
     wp_localize_script( 'simple_events_js', 'simple_events_js_var', array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );
+    wp_enqueue_style( 'simple_events_frontend_css', plugin_dir_url( __FILE__ ) . 'css/front.css' );
 }
 add_action('wp_enqueue_scripts', 'simple_events_enqueue_script');
-add_action('admin_enqueue_scripts', 'simple_events_enqueue_script');
+
+/**
+ * Enqueuing the js and css files on backend
+ */
+function simple_events_enqueue_script_backend() {    
+    wp_enqueue_style( 'simple_events_backend_css', plugin_dir_url( __FILE__ ) . 'css/admin.css' );
+}
+add_action('admin_enqueue_scripts', 'simple_events_enqueue_script_backend');
 
 
 /**
@@ -282,13 +303,25 @@ function submit_simple_event_callback() {
 		}		
 
 		$updateuserMetaFlag = update_post_meta( $_POST['postId'], 'applied_users_data', json_encode( $appliedUsers ) );
+		
+		$email_description = $event_name = $event_venu = $event_location = $event_information_text = $event_dateandtime = "";
+
 		$email_description 	= get_post_meta($_POST['postId'], '_email_description', ARRAY_A);
+		$event_name 		= get_post_meta($_POST['postId'], '_event_name', ARRAY_A);		
+		$event_venu 		= get_post_meta($_POST['postId'], '_event_venu', ARRAY_A);		
+		$event_location 	= get_post_meta($_POST['postId'], '_event_location', ARRAY_A);		
+		$event_information_text = get_post_meta($_POST['postId'], '_event_information_text', ARRAY_A);
+		$event_dateandtime 	= get_post_meta($_POST['postId'], '_event_dateandtime', ARRAY_A);		
+		
+		$emailBody 	= "";
+		$emailBody 	.= "$email_description\n";
+		$emailBody 	.= "\nEvent Name: $event_name\n";
+		$emailBody 	.= "\nEvent Venu: $event_venu\n";
+		$emailBody 	.= "\nEvent Location: $event_location\n";
+		$emailBody 	.= "\nEvent Information: $event_information_text\n";
+		$emailBody 	.= "\nEvent Data and time: $event_dateandtime\n";
 
-		// echo "<pre>";
-		// print_r($email_description);
-		// echo "</pre>";
-
-		wp_mail($currentUserEmail, "Successfully applied to the event", $email_description);
+		wp_mail($currentUserEmail, "Successfully applied to the event", $emailBody);
 	}
 	else {
 		echo "post id is required";
@@ -296,6 +329,10 @@ function submit_simple_event_callback() {
 	wp_die();
 }
 
+
+/**
+* Adding shortcode for this plugin
+**/
 add_shortcode( 'simple_events', 'simple_events_shortcode_callback' );
 function simple_events_shortcode_callback( $atts ) {
 	// Get shortcodes
@@ -309,35 +346,14 @@ function simple_events_shortcode_callback( $atts ) {
 		return;
 	}
 
-	$output = "<form method='post' class='simpleEventAjaxForm'>
-		<input type='hidden' name='action' value='submit_simple_event'>
-		<input type='hidden' name='postId' value='".$a['id']."'>
-		<table>
-			<tr>
-				<td><input type='text' class='dmp-event-name' name='userName' placeholder='Your Name' required></td>
-			</tr>
-			<tr>
-				<td><input type='email' class='dmp-event-email' name='userEmail' placeholder='Your email address' required></td>
-			</tr>
-			<tr>
-				<td><input type='text' class='dmp-event-company' name='userCompany' placeholder='Company'></td>
-			</tr>
-			<tr>
-				<td><textarea name='userDescription' class='dmp-event-comments' placeholder='Useful information, food allergy, special needs etc'></textarea></td>
-			</tr>
-			<tr>
-				<td><input type='checkbox' class='dmp-event-confirm-terms' required>Terms accepted</td>
-			</tr>
-			<tr>
-				<td><button type='submit' class='dmp-event-submit'>Submit</button></td>
-			</tr>
-		</table>		
-	</form>";
-
-	return $output;
+	ob_start();
+    include __DIR__ . '/templates/frontend.php';
+    return ob_get_clean();
 }
 
-
+/***
+* https://www.smashingmagazine.com/2017/12/customizing-admin-columns-wordpress/
+**/
 // add_filter( 'manage_edit-simple_events', 'my_edit_simple_events' ) ;
 // function my_edit_simple_events( $columns ) {
 // 	$columns = array(
@@ -350,3 +366,42 @@ function simple_events_shortcode_callback( $atts ) {
 
 // 	return $columns;
 // }
+
+
+/**
+* Adding columns for events post type in admin area
+**/
+add_filter( 'manage_simple_events_posts_columns', 'simple_events_filter_posts_columns' );
+function simple_events_filter_posts_columns( $columns ) {	
+	$columns['eventname'] = __( 'Event Name' );
+	$columns['venu'] = __( 'Venue', 'smashing' );
+	$columns['location'] = __( 'Location', 'smashing' );
+	$columns['datetime'] = __( 'Date and Time' );
+	$columns['shortcode'] = __( 'Shortcode' );
+	return $columns;
+}
+
+
+/**
+* Populating columns for events post type in admin area
+**/
+add_action( 'manage_simple_events_posts_custom_column', 'simple_events_realestate_column', 10, 2);
+function simple_events_realestate_column( $column, $post_id ) {
+	// Image column
+	if ( 'shortcode' === $column ) {
+		echo get_the_post_thumbnail( $post_id, array(80, 80) );
+		echo "[simple_events id='".$post_id."']";
+	}
+	if ( 'venu' === $column ) {
+		echo get_post_meta($post_id, '_event_venu', ARRAY_A);
+	}
+	if ( 'eventname' === $column ) {
+		echo get_post_meta($post_id, '_event_name', ARRAY_A);
+	}
+	if ( 'location' === $column ) {
+		echo get_post_meta($post_id, '_event_location', ARRAY_A);
+	}
+	if ( 'datetime' === $column ) {
+		echo get_post_meta($post_id, '_event_dateandtime', ARRAY_A);
+	}
+}
