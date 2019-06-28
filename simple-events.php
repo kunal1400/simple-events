@@ -55,14 +55,14 @@ function events_posttype_callback() {
 	$args = array(
 		'labels'             => $labels,
 		'description'        => __( 'Description.', 'your-plugin-textdomain' ),
-		'public'             => true,
+		'public'             => false,
 		'publicly_queryable' => true,
 		'show_ui'            => true,
 		'show_in_menu'       => true,
 		'query_var'          => true,
 		'rewrite'            => array( 'slug' => 'jobs' ),
 		'capability_type'    => 'post',
-		'has_archive'        => true,
+		'has_archive'        => false,
 		'hierarchical'       => false,
 		'menu_position'      => null,
 		'supports'           => array( 'title' )
@@ -114,7 +114,7 @@ function simple_events_requested_callback() {
 			
 			echo '<table>
 				<tr>
-					<td><h3>JOB TITLE: '.$title.'</h3></td>
+					<td><h3>'.$title.'</h3></td>
 					<td align="right">
 						<form method="post" id="download_form"  action="'.plugins_url( 'download.csv.php' , __FILE__ ).'">
 				            <input type="hidden" name="download" value="'.get_home_path().'" />
@@ -126,19 +126,17 @@ function simple_events_requested_callback() {
 			</table>';			
 
 			echo '<table class="widefat fixed" cellspacing="0" >';
-			echo "<thead><tr>
-					<th width='40'>S.No</th>					
+			echo "<thead><tr>					
 					<th>Name</th>
 					<th>Email</th>
 					<th>Company</th>
-					<th>Description</th>
+					<th>Additional Information</th>
 				</tr><thead>";
 			echo "<tbody>";
 			if($appliedJobs) {
 				$appliedJobs = json_decode($appliedJobs, ARRAY_A);
 				foreach ($appliedJobs as $key => $userData) {
 					echo "<tr>";
-					echo "<td>".($key+1)."</td>";
 					echo "<td>".@$userData['userName']."</td>";
 					echo "<td>".@$userData['userEmail']."</td>";
 					echo "<td>".@$userData['userCompany']."</td>";
@@ -313,13 +311,17 @@ function submit_simple_event_callback() {
 		$event_information_text = get_post_meta($_POST['postId'], '_event_information_text', ARRAY_A);
 		$event_dateandtime 	= get_post_meta($_POST['postId'], '_event_dateandtime', ARRAY_A);		
 		
-		$emailBody 	= "";
-		$emailBody 	.= "$email_description\n";
+		$emailBody 	= "Hi ".$_POST['userName'];
+		$emailBody 	.= "\n$email_description\n";
 		$emailBody 	.= "\nEvent Name: $event_name\n";
-		$emailBody 	.= "\nEvent Venu: $event_venu\n";
+		$emailBody 	.= "\nEvent Venue: $event_venu\n";
 		$emailBody 	.= "\nEvent Location: $event_location\n";
 		$emailBody 	.= "\nEvent Information: $event_information_text\n";
-		$emailBody 	.= "\nEvent Data and time: $event_dateandtime\n";
+		$emailBody 	.= "\nEvent Date and time: $event_dateandtime\n";
+		$emailBody 	.= "\nUser Name: ".$_POST['userName']."\n";
+		$emailBody 	.= "\nUser Email: ".$_POST['userEmail']."\n";
+		$emailBody 	.= "\nUser Company: ".$_POST['userCompany']."\n";
+		$emailBody 	.= "\nUser Description: ".$_POST['userDescription']."\n";
 
 		wp_mail($currentUserEmail, "Successfully applied to the event", $emailBody);
 	}

@@ -7,7 +7,7 @@ if(isset($_POST['download']) && is_file($core)){
 	if( !empty($_POST['post_id']) ) {
 		$postId 	 = $_POST['post_id'];
 		$appliedJobs = get_post_meta($postId, 'applied_users_data', ARRAY_A);
-		$rows = "Name, Email, Company, Description\n";
+		$rows = "Name, Email, Company, Additional Information\n";
 		if($appliedJobs) {
 			$appliedJobs = json_decode($appliedJobs, ARRAY_A);
 			foreach ($appliedJobs as $key => $userData) {
