@@ -348,9 +348,16 @@ function simple_events_shortcode_callback( $atts ) {
 		return;
 	}
 
-	ob_start();
-    include __DIR__ . '/templates/frontend.php';
-    return ob_get_clean();
+	$postStatus = get_post_status($a['id']);
+
+	if($postStatus == 'publish') {
+		ob_start();
+	    include __DIR__ . '/templates/frontend.php';
+	    return ob_get_clean();
+	}
+	else {
+		return "shortcode not seems to be publish";
+	}	
 }
 
 /***

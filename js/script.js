@@ -13,10 +13,13 @@ jQuery(document).ready(function() {
 			success: function(response) {
 				selectedNode.find("button").html("Submited")
 				selectedNode.find(".successMsg").text("You have successfully registered to this event")
+				
 				selectedNode.find("input").text("")
 				selectedNode.find("input").val("")
 				selectedNode.find("textarea").text("")
 				selectedNode.find("textarea").val("")
+				selectedNode.find("input").prop('checked', false);
+
 				console.log(response, 'success')
 			},
 			error: function(error) {
