@@ -11,7 +11,11 @@ if(isset($_POST['download']) && is_file($core)){
 		if($appliedJobs) {
 			$appliedJobs = json_decode($appliedJobs, ARRAY_A);
 			foreach ($appliedJobs as $key => $userData) {
-				$rows .= @$userData['userName'].','.@$userData['userEmail'].','.@$userData['userCompany'].','.@$userData['userDescription']."\n";
+				$rows .= str_replace(",", ";", @$userData['userName']).','
+						.@$userData['userEmail'].','
+						.str_replace(",", ";", @$userData['userCompany']).','
+						.str_replace(",", ";", @$userData['userDescription']).','
+						."\n";
 			}
 
 			$filename = "event_results.csv";
